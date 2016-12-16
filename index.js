@@ -1,12 +1,16 @@
 const robot = require('robotjs')
 
-// const mouse = robot.getMousePos()
 const mouse = { x: 2224, y: 1210 }
 
 function haveToJump(x, y) {
+    let lastHex = ''
     for (let off = 20; off >= 0; off -= 10) {
         const hex = robot.getPixelColor(x, y + off)
-        if(hex === '535353' || hex === 'acacac') return true
+        // if(hex === '535353' || hex === 'acacac') return true
+        if(lastHex !== hex) {
+            if(lastHex !== '') return true
+            lastHex = hex
+        }
     }
     return false
 }
@@ -27,9 +31,6 @@ let pos = 0
 
 while(true) {
     ++pos
-    if(pos == 1000) console.log('chegou no 1000')
-    else if(pos == 2000) console.log('chegou no 2000')
-    else if(pos == 3000) console.log('chegou no 3000')
 
     if(++endGameCheck > 1000) {
         endGameCheck = 0
@@ -39,8 +40,11 @@ while(true) {
             pos = 0
         }
     }
-
-    for (let i = 40; i <= 70; i += 10) {
+    let min = pos / 50 // 50
+    min = min < 40 ? 40 : min
+    let max = pos / 28 // 70
+    max = max < 70 ? 70 : max
+    for (let i = min; i <= max; i += 10) {
         if(haveToJump(mouse.x + i, mouse.y)) {
             // robot.keyTap('space')
             robot.keyToggle('space', 'down')
@@ -52,7 +56,7 @@ while(true) {
 
     if(jumpTime > 0) {
         const ref = robot.getPixelColor(mouse.x, mouse.y + 12)
-        if(ref === '535353' || ref === 'acacac') {
+        if(pos > 1500 && ref === '535353' || ref === 'acacac') {
             objectUnder = true
         } else if(objectUnder) {
             downWaiting = 1
