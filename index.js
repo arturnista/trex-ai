@@ -1,28 +1,29 @@
 const robot = require('robotjs')
 
-const mouse = { x: 2224, y: 1210 }
+// return console.log(robot.getMousePos())
+const mouse = { x: 2203, y: 1198 }
+const endGameCheckPos = { x: 2462, y: 1204 }
 
 function isBlack(c) {
     c = c.substring(0, 2)
     return parseInt(c, 16) < 150
 }
 
-function haveToJump(x, y) {
+function haveToJump(x, y, jumpFn) {
     let lastHex = '1'
-    for (let off = 20; off >= 0; off -= 10) {
+    for (let off = 0; off <= 20; off += 10) {
         const hex = robot.getPixelColor(x, y + off)
         const bl = isBlack(hex)
         // if(hex === '535353' || hex === 'acacac') return true
         if(lastHex !== bl) {
-            if(lastHex !== '1') return true
+            if(lastHex !== '1') return jumpFn()
             lastHex = bl
         }
     }
-    return false
 }
 
 function checkEndGame() {
-    const hex = robot.getPixelColor(2423, 1160)
+    const hex = robot.getPixelColor(endGameCheckPos.x, endGameCheckPos.y)
     return(hex === '535353' || hex === 'acacac')
 }
 
@@ -32,37 +33,33 @@ let downWaiting = 0
 let treeAhead = false
 let objectUnder = false
 
-let endGameCheck = 0
-
 let pos = 0
 
-while(true) {
-    ++pos
-
-    if(++endGameCheck > 1000) {
-        endGameCheck = 0
-        if(checkEndGame()) {
-            robot.moveMouse(2423, 1160)
-            robot.mouseClick()
-            pos = 0
-        }
+setInterval(function () {
+    if(checkEndGame()) {
+        robot.moveMouse(endGameCheckPos.x, endGameCheckPos.y)
+        robot.mouseClick()
+        pos = 0
     }
-    let min = pos / 50 // 50
+}, 5000)
+
+function game() {
+    pos += 0.7
+
+    let min = pos / 40 // 50
     min = min < 40 ? 40 : min
 
     // let max = pos / 28 // 70
     // max = max < 70 ? 70 : max
     for (let i = min; i <= min + 30; i += 10) {
-        if(haveToJump(mouse.x + i, mouse.y)) {
+        treeAhead = false
+        haveToJump(mouse.x + i, mouse.y, () => {
             // robot.keyTap('space')
             robot.keyToggle('space', 'down')
             jumpTime = 1
             objectUnder = false
             treeAhead = true
-            break
-        } else {
-            treeAhead = false
-        }
+        })
     }
 
     if(jumpTime > 0) {
@@ -90,4 +87,7 @@ while(true) {
         robot.keyToggle('down', 'up')
         downTime = 0
     }
+    setTimeout(game, 1)
 }
+
+game()
