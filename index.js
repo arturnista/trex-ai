@@ -1,24 +1,25 @@
 const robot = require('robotjs')
 
 // return console.log(robot.getMousePos())
-const mouse = { x: 2229, y: 1196 }
-const endGameCheckPos = { x: 2462, y: 1204 }
-
-function hexColor(c) {
-    c = c.substring(0, 2)
-    return parseInt(c, 16)
-}
+const mouse = { x: 2229, y: 1200 }
+const endGameCheckPos = { x: 2415, y: 1146 }
 
 function haveToJump(x, y, jumpFn) {
-    let lastHex = null
+    let lastColor = null
+
     let check = (off) => {
-        const hex = robot.getPixelColor(x, y + off)
-        const bl = hexColor(hex)
-        // if(hex === '535353' || hex === 'acacac') return true
-        if(!lastHex) lastHex = bl
-        if(lastHex - bl > 150) return jumpFn()
+        for (var i = -1; i <= 2; i++) {
+            let yOff = i * 10
+            const colorHex = robot.getPixelColor(x + off, y + yOff)
+            const colorDec = parseInt(colorHex.substring(0, 2), 16) // Color in DEC
+            if(!lastColor) lastColor = colorDec
+            if(lastColor - colorDec > 150) {
+                return jumpFn()
+            }
+        }
     }
-    for (let off = 0; off <= 20; off += 10) setTimeout(check, 1, off)
+
+    for (let off = 0; off < 30; off += 10) setTimeout(check, 1, off)
 }
 
 function checkEndGame() {
@@ -31,60 +32,38 @@ let downTime = 0
 let downWaiting = 0
 let treeAhead = false
 let objectUnder = false
-
-let pos = 0
+let initTime = new Date().getTime()
 
 setInterval(function () {
     if(checkEndGame()) {
         robot.moveMouse(endGameCheckPos.x, endGameCheckPos.y)
         robot.mouseClick()
-        pos = 0
+        initTime = new Date().getTime()
     }
 }, 5000)
 
 function game() {
-    pos += 0.7
+    let curTime = new Date().getTime()
 
-    let min = pos / 40 // 50
+    let min = (curTime - initTime) / 200 // 50
     min = min < 40 ? 40 : min
 
-    // let max = pos / 28 // 70
-    // max = max < 70 ? 70 : max
-    for (let i = min; i <= min + 30; i += 10) {
-        treeAhead = false
-        haveToJump(mouse.x + i, mouse.y, () => {
-            // robot.keyTap('space')
-            robot.keyToggle('space', 'down')
-            jumpTime = 1
-            objectUnder = false
-            treeAhead = true
-        })
-    }
+    console.log(min)
+
 
     if(jumpTime > 0) {
-        const ref = robot.getPixelColor(mouse.x, mouse.y + 12)
-        if(pos > 1500 && (ref === '535353' || ref === 'acacac')) {
-            objectUnder = true
-        } else if(objectUnder) {
-            downWaiting = 1
-            objectUnder = false
-        }
-
-        if(treeAhead && downWaiting > 0 && downWaiting < 4) downWaiting = 3 // Set to 3 so will enter in the if
-
-        if(++jumpTime >= 10) {
+        if(new Date().getTime() - jumpTime >= 100) {
             robot.keyToggle('space', 'up')
             jumpTime = 0
         }
-    }
-
-    if(downWaiting > 0 && ++downWaiting >= 4) {
-        robot.keyToggle('down', 'down')
-        downTime = 1
-        downWaiting = 0
-    } else if(downTime > 0 && ++downTime >= 5) {
-        robot.keyToggle('down', 'up')
-        downTime = 0
+    } else {
+        treeAhead = false
+        haveToJump(mouse.x + min, mouse.y, () => {
+            robot.keyToggle('space', 'down')
+            jumpTime = new Date().getTime()
+            objectUnder = false
+            treeAhead = true
+        })
     }
     setTimeout(game, 1)
 }
