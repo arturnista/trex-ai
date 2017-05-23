@@ -1,25 +1,24 @@
 const robot = require('robotjs')
 
 // return console.log(robot.getMousePos())
-const mouse = { x: 2203, y: 1198 }
+const mouse = { x: 2229, y: 1196 }
 const endGameCheckPos = { x: 2462, y: 1204 }
 
-function isBlack(c) {
+function hexColor(c) {
     c = c.substring(0, 2)
-    return parseInt(c, 16) < 150
+    return parseInt(c, 16)
 }
 
 function haveToJump(x, y, jumpFn) {
-    let lastHex = '1'
-    for (let off = 0; off <= 20; off += 10) {
+    let lastHex = null
+    let check = (off) => {
         const hex = robot.getPixelColor(x, y + off)
-        const bl = isBlack(hex)
+        const bl = hexColor(hex)
         // if(hex === '535353' || hex === 'acacac') return true
-        if(lastHex !== bl) {
-            if(lastHex !== '1') return jumpFn()
-            lastHex = bl
-        }
+        if(!lastHex) lastHex = bl
+        if(lastHex - bl > 150) return jumpFn()
     }
+    for (let off = 0; off <= 20; off += 10) setTimeout(check, 1, off)
 }
 
 function checkEndGame() {
